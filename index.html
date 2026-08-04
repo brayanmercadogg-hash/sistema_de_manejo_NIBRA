@@ -5,44 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestor y Caja - GitHub</title>
     <style>
-        body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; }
+        * { box-sizing: border-box; }
+        body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; overflow: hidden; }
         
         /* Modal de Login */
-        #pantalla-login { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .login-box { background: white; padding: 30px; border-radius: 8px; width: 350px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        #pantalla-login { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
+        .login-box { background: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .login-box h2 { margin-top: 0; color: #333; }
-        .login-box input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .login-box input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; }
         .login-box button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
         .login-box button:hover { background: #0056b3; }
 
         /* Contenedor Principal */
-        .app-container { display: flex; width: 100%; height: 100%; }
-        #gui { flex: 1; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; gap: 20px; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h2 { margin-top: 0; color: #333; }
+        .app-container { display: flex; width: 100%; height: 100%; flex-direction: row; }
+        #gui { flex: 1; padding: 15px; display: flex; flex-direction: column; overflow-y: auto; gap: 15px; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 100%; }
+        h2 { margin-top: 0; color: #333; font-size: 1.25rem; }
         .form-group { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-        .form-group input, .form-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; min-width: 120px; }
-        button { padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .form-group input, .form-group select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; flex: 1; min-width: 140px; font-size: 1rem; }
+        button { padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.95rem; }
         button:hover { background: #0056b3; }
-        .btn-success { background: #28a745; }
+        .btn-success { background: #28a745; width: 100%; }
         .btn-success:hover { background: #218838; }
-        .btn-danger { background: #dc3545; padding: 4px 8px; font-size: 0.9em; }
+        .btn-danger { background: #dc3545; padding: 6px 10px; font-size: 0.85em; }
         .btn-danger:hover { background: #c82333; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; font-size: 0.95rem; }
+        
+        .table-responsive-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 450px; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; font-size: 0.9rem; white-space: nowrap; }
         
         /* Resultados de Caja / Calculadora */
-        .resultado-caja { background: #e9ecef; padding: 12px; border-radius: 6px; margin-top: 10px; font-family: monospace; font-size: 1.05rem; }
+        .resultado-caja { background: #e9ecef; padding: 12px; border-radius: 6px; margin-top: 10px; font-family: monospace; font-size: 0.95rem; word-break: break-all; }
         
         /* Terminal (Solo Admin) */
-        #terminal-container { flex: 1; background: #121212; color: #00ff00; font-family: 'Consolas', monospace; padding: 20px; display: flex; flex-direction: column; border-left: 2px solid #333; }
-        #consola { flex-grow: 1; overflow-y: auto; white-space: pre-wrap; margin-bottom: 10px; }
-        .linea-input { display: flex; }
-        .prompt { margin-right: 10px; }
-        #inputComando { background: transparent; border: none; color: #ffffff; font-family: inherit; font-size: 1rem; flex-grow: 1; outline: none; }
+        #terminal-container { flex: 1; background: #121212; color: #00ff00; font-family: 'Consolas', monospace; padding: 15px; display: flex; flex-direction: column; border-left: 2px solid #333; min-width: 300px; }
+        #consola { flex-grow: 1; overflow-y: auto; white-space: pre-wrap; margin-bottom: 10px; font-size: 0.85rem; }
+        .linea-input { display: flex; align-items: center; }
+        .prompt { margin-right: 8px; font-size: 0.9rem; }
+        #inputComando { background: transparent; border: none; color: #ffffff; font-family: inherit; font-size: 0.95rem; flex-grow: 1; outline: none; }
         
-        .logout-btn { background: #6c757d; }
+        .logout-btn { background: #6c757d; padding: 6px 12px; font-size: 0.85rem; }
         .logout-btn:hover { background: #5a6268; }
+
+        /* RESPONSIVIDAD PARA CELULARES Y TABLETS */
+        @media (max-width: 768px) {
+            body { overflow: auto; height: auto; display: block; }
+            .app-container { flex-direction: column; height: auto; }
+            #terminal-container { height: 350px; border-left: none; border-top: 2px solid #333; }
+            #gui { height: auto; overflow: visible; padding: 10px; }
+            .form-group { flex-direction: column; gap: 8px; }
+            .form-group input, .form-group select { width: 100%; min-width: 100%; }
+            .card { padding: 12px; }
+        }
     </style>
 </head>
 <body>
@@ -51,7 +65,7 @@
     <div id="pantalla-login">
         <div class="login-box">
             <h2>Identificación</h2>
-            <input type="text" id="inputUsuario" placeholder="Nombre de usuario (ej. brayan / empleado)" autocomplete="off">
+            <input type="text" id="inputUsuario" placeholder="Nombre de usuario (ej. brayan)" autocomplete="off">
             <button onclick="verificarUsuario()" id="btnContinuar">Continuar</button>
 
             <div id="bloqueAdmin" style="display: none; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
@@ -67,14 +81,14 @@
     <!-- APLICACIÓN PRINCIPAL -->
     <div class="app-container" id="appMain" style="display: none;">
         
-        <!-- PANEL GRÁFICO (Visible para Trabajador y Admin) -->
+        <!-- PANEL GRÁFICO -->
         <div id="gui">
             
-            <!-- SECCIÓN 1: CAJA Y VENTAS (Calculadora de vuelto y registro) -->
+            <!-- SECCIÓN 1: CAJA Y VENTAS -->
             <div class="card">
                 <h2>Caja Registradora / Ventas</h2>
                 <div class="form-group">
-                    <select id="selectProductoVenta" onchange="actualizarPrecioVenta()">
+                    <select id="selectProductoVenta">
                         <option value="">-- Seleccionar Producto --</option>
                     </select>
                     <input type="number" id="inputEfectivo" placeholder="Dinero recibido ($)" autocomplete="off">
@@ -82,46 +96,46 @@
                 <div class="form-group">
                     <button class="btn-success" onclick="procesarVenta()">Procesar Venta y Calcular Devuelta</button>
                 </div>
-                <div id="resultadoCaja" class="resultado-caja" style="display: none;">
-                    <!-- Aquí se despliega el cambio a devolver y detalles -->
-                </div>
+                <div id="resultadoCaja" class="resultado-caja" style="display: none;"></div>
             </div>
 
-            <!-- SECCIÓN 2: CONTROL DE ADMIN (Solo Admin) -->
+            <!-- SECCIÓN 2: CONTROL DE ADMIN -->
             <div class="card" id="panelAdminControls" style="display: none;">
                 <h2>Registrar Nuevo Producto</h2>
                 <div class="form-group">
-                    <input type="text" id="guiNombre" placeholder="Nombre del producto" autocomplete="off">
-                    <input type="number" id="guiCosto" placeholder="Costo de producción ($)" autocomplete="off">
-                    <input type="number" id="guiPrecio" placeholder="Precio de venta ($)" autocomplete="off">
-                    <button onclick="agregarGrafico()">Guardar en Inventario</button>
+                    <input type="text" id="guiNombre" placeholder="Nombre" autocomplete="off">
+                    <input type="number" id="guiCosto" placeholder="Costo ($)" autocomplete="off">
+                    <input type="number" id="guiPrecio" placeholder="Precio ($)" autocomplete="off">
+                    <button onclick="agregarGrafico()" style="width: 100%;">Guardar</button>
                 </div>
             </div>
 
             <!-- SECCIÓN 3: INVENTARIO -->
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div>
                         <h2 style="margin: 0;">Inventario Actual</h2>
-                        <span id="lblInfoUsuario" style="font-size: 0.85rem; color: #666;"></span>
+                        <span id="lblInfoUsuario" style="font-size: 0.8rem; color: #666;"></span>
                     </div>
                     <button class="logout-btn" onclick="cerrarSesion()">Salir</button>
                 </div>
-                <table>
-                    <thead>
-                        <tr><th>ID</th><th>Nombre</th><th>Costo</th><th>Precio Venta</th><th id="thAccion" style="display:none;">Acción</th></tr>
-                    </thead>
-                    <tbody id="tablaProductos"></tbody>
-                </table>
-            </div>
-
-            <!-- SECCIÓN 4: HISTORIAL DE VENTAS Y AUDITORÍA (Anti-Fraudes) -->
-            <div class="card">
-                <h2 style="margin: 0 0 10px 0;">Historial de Transacciones (Auditoría)</h2>
-                <div style="max-height: 200px; overflow-y: auto;">
+                <div class="table-responsive-container">
                     <table>
                         <thead>
-                            <tr><th>Fecha</th><th>Cajero</th><th>Detalle / Producto</th><th>Total</th><th>Efectivo</th><th>Devuelta</th></tr>
+                            <tr><th>ID</th><th>Nombre</th><th>Costo</th><th>Precio</th><th id="thAccion" style="display:none;">Acción</th></tr>
+                        </thead>
+                        <tbody id="tablaProductos"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 4: HISTORIAL DE VENTAS -->
+            <div class="card">
+                <h2 style="margin: 0 0 10px 0;">Historial de Auditoría</h2>
+                <div class="table-responsive-container" style="max-height: 220px;">
+                    <table>
+                        <thead>
+                            <tr><th>Fecha</th><th>Cajero</th><th>Producto</th><th>Total</th><th>Efectivo</th><th>Devuelta</th></tr>
                         </thead>
                         <tbody id="tablaHistorial"></tbody>
                     </table>
@@ -188,7 +202,7 @@
             rolActual = rol;
             document.getElementById('pantalla-login').style.display = 'none';
             document.getElementById('appMain').style.display = 'flex';
-            document.getElementById('lblInfoUsuario').textContent = `Usuario: ${usuario} (${rol.toUpperCase()})`;
+            document.getElementById('lblInfoUsuario').textContent = `${usuario} (${rol.toUpperCase()})`;
 
             if (rol === 'admin') {
                 document.getElementById('panelAdminControls').style.display = 'block';
@@ -211,7 +225,6 @@
             location.reload();
         }
 
-        // --- GITHUB API (Soporta múltiples archivos JSON) ---
         async function obtenerArchivoGitHub(nombreArchivo) {
             const owner = localStorage.getItem('gh_owner');
             const repo = localStorage.getItem('gh_repo');
@@ -270,7 +283,6 @@
             listaProductosCache = await obtenerArchivoGitHub('productos.json');
             const transacciones = await obtenerArchivoGitHub('transacciones.json');
             
-            // Actualizar tabla productos
             const tbody = document.getElementById('tablaProductos');
             const selectProd = document.getElementById('selectProductoVenta');
             tbody.innerHTML = '';
@@ -290,7 +302,6 @@
                 selectProd.innerHTML += `<option value="${p.id}">${p.nombre} - $${p.precio}</option>`;
             });
 
-            // Actualizar tabla historial transacciones
             const tbodyHist = document.getElementById('tablaHistorial');
             tbodyHist.innerHTML = '';
             transacciones.slice().reverse().forEach(t => {
@@ -307,18 +318,13 @@
             });
         }
 
-        // --- LÓGICA DE CAJA Y CÁLCULO ---
-        function actualizarPrecioVenta() {
-            // Puedes añadir lógica visual adicional aquí si lo requieres
-        }
-
         async function procesarVenta() {
             const idProd = document.getElementById('selectProductoVenta').value;
             const efectivoStr = document.getElementById('inputEfectivo').value;
             const divResultado = document.getElementById('resultadoCaja');
 
             if (!idProd || !efectivoStr) {
-                alert("Selecciona un producto y el dinero entregado por el cliente.");
+                alert("Selecciona un producto y el dinero entregado.");
                 return;
             }
 
@@ -327,7 +333,7 @@
             const efectivo = parseFloat(efectivoStr);
 
             if (efectivo < precioVenta) {
-                alert("El dinero entregado es menor al precio del producto.");
+                alert("El dinero entregado es menor al precio.");
                 return;
             }
 
@@ -335,33 +341,29 @@
             divResultado.style.display = 'block';
             divResultado.innerHTML = `
                 <b>Producto:</b> ${producto.nombre}<br>
-                <b>Total a Pagar:</b> $${precioVenta}<br>
-                <b>Efectivo Recibido:</b> $${efectivo}<br>
-                <span style="color: #28a745; font-size: 1.2rem;"><b>Dinero a Devolver (Devuelta): $${devuelta}</b></span>
+                <b>Total:</b> $${precioVenta} | <b>Recibido:</b> $${efectivo}<br>
+                <span style="color: #28a745; font-size: 1.1rem;"><b>Devuelta: $${devuelta}</b></span>
             `;
 
-            // Registrar transacción en transacciones.json
             const transacciones = await obtenerArchivoGitHub('transacciones.json');
-            const nuevaTransaccion = {
-                fecha: new Date().toLocaleString('es-ES'),
+            transacciones.push({
+                fecha: new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit', second:'2-digit'}),
                 cajero: usuarioActual,
                 producto: producto.nombre,
                 total: precioVenta,
                 efectivo: efectivo,
                 devuelta: devuelta
-            };
-            transacciones.push(nuevaTransaccion);
+            });
 
-            const exito = await guardarArchivoGitHub('transacciones.json', transacciones, `Venta procesada por ${usuarioActual}: ${producto.nombre}`);
+            const exito = await guardarArchivoGitHub('transacciones.json', transacciones, `Venta: ${producto.nombre}`);
             if (exito) {
                 document.getElementById('inputEfectivo').value = '';
                 sincronizarDatos();
             } else {
-                alert("Error al registrar la transacción en la nube.");
+                alert("Error al registrar en la nube.");
             }
         }
 
-        // --- FUNCIONES DE ADMINISTRACIÓN ---
         async function agregarGrafico() {
             const nombre = document.getElementById('guiNombre').value.trim();
             const costo = document.getElementById('guiCosto').value.trim();
@@ -372,7 +374,7 @@
             const nuevo_id = productos.length === 0 ? 1 : productos[productos.length - 1].id + 1;
 
             productos.push({ id: nuevo_id, nombre, costo, precio });
-            const exito = await guardarArchivoGitHub('productos.json', productos, `Admin (${usuarioActual}): Agregado ${nombre}`);
+            const exito = await guardarArchivoGitHub('productos.json', productos, `Agregado ${nombre}`);
             
             if (exito) {
                 document.getElementById('guiNombre').value = '';
@@ -387,12 +389,11 @@
         async function eliminarProducto(id) {
             let productos = await obtenerArchivoGitHub('productos.json');
             const filtrados = productos.filter(p => p.id !== id);
-            const exito = await guardarArchivoGitHub('productos.json', filtrados, `Admin (${usuarioActual}): Eliminado ID ${id}`);
+            const exito = await guardarArchivoGitHub('productos.json', filtrados, `Eliminado ID ${id}`);
             if (exito) sincronizarDatos();
-            else alert("Error al eliminar en GitHub.");
+            else alert("Error al eliminar.");
         }
 
-        // --- TERMINAL DE COMANDOS (ADMIN) ---
         const inputConsola = document.getElementById('inputComando');
         const consola = document.getElementById('consola');
 
@@ -410,36 +411,25 @@
                 let productos = await obtenerArchivoGitHub('productos.json');
 
                 if (cmd === 'help') {
-                    consola.textContent += "Comandos:\n- add [nombre] [costo] [precio]\n- del [id]\n- list\n- clear\n\n";
+                    consola.textContent += "Comandos: add [nom] [costo] [precio] | del [id] | list | clear\n\n";
                 } else if (cmd === 'clear') {
                     consola.textContent = "Terminal limpia.\n\n";
                 } else if (cmd === 'list') {
                     if (productos.length === 0) consola.textContent += "Sin productos.\n\n";
-                    else consola.textContent += "ID | Nombre | Costo | Precio\n" + productos.map(p => `${p.id} | ${p.nombre} | $${p.costo || 0} | $${p.precio}`).join("\n") + "\n\n";
-                } else if (cmd === 'add') {
-                    if (args.length < 3) {
-                        consola.textContent += "Uso: add [nombre] [costo] [precio]\n\n";
-                    } else {
-                        const precio = args.pop();
-                        const costo = args.pop();
-                        const nombre = args.join(" ");
-                        const nuevo_id = productos.length === 0 ? 1 : productos[productos.length - 1].id + 1;
-                        productos.push({ id: nuevo_id, nombre, costo, precio });
-                        
-                        const exito = await guardarArchivoGitHub('productos.json', productos, `Terminal: Agregado ${nombre}`);
-                        if (exito) consola.textContent += `[OK] Producto ${nuevo_id} registrado.\n\n`;
-                        else consola.textContent += "[ERROR] No se pudo guardar.\n\n";
-                    }
-                } else if (cmd === 'del') {
-                    if (args.length === 0) {
-                        consola.textContent += "Uso: del [id]\n\n";
-                    } else {
-                        const idBorrar = parseInt(args[0]);
-                        const filtrados = productos.filter(p => p.id !== idBorrar);
-                        const exito = await guardarArchivoGitHub('productos.json', filtrados, `Terminal: Eliminado ID ${idBorrar}`);
-                        if (exito) consola.textContent += `[OK] Producto eliminado.\n\n`;
-                        else consola.textContent += "[ERROR] Error al actualizar.\n\n";
-                    }
+                    else consola.textContent += productos.map(p => `${p.id} | ${p.nombre} | $${p.precio}`).join("\n") + "\n\n";
+                } else if (cmd === 'add' && args.length >= 3) {
+                    const precio = args.pop();
+                    const costo = args.pop();
+                    const nombre = args.join(" ");
+                    const nuevo_id = productos.length === 0 ? 1 : productos[productos.length - 1].id + 1;
+                    productos.push({ id: nuevo_id, nombre, costo, precio });
+                    
+                    if (await guardarArchivoGitHub('productos.json', productos, `Terminal add`)) 
+                        consola.textContent += `[OK] Registrado ID ${nuevo_id}.\n\n`;
+                } else if (cmd === 'del' && args.length > 0) {
+                    const filtrados = productos.filter(p => p.id !== parseInt(args[0]));
+                    if (await guardarArchivoGitHub('productos.json', filtrados, `Terminal del`)) 
+                        consola.textContent += `[OK] Eliminado.\n\n`;
                 } else {
                     consola.textContent += "Comando no reconocido.\n\n";
                 }
