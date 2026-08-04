@@ -16,5 +16,11 @@
         "nombre": "Skala maracuya",
         "costo": "20000",
         "precio": "40000"
+    },
+    {
+        "id": 4,
+        "nombre": "Colageno 2",
+        "costo": "800",
+        "precio": "1600"
     }
 ]
