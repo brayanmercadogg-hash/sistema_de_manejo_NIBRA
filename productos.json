@@ -28,5 +28,11 @@
         "nombre": "Rimel",
         "costo": "4800",
         "precio": "10000"
+    },
+    {
+        "id": 6,
+        "nombre": "Ganchos conchas",
+        "costo": "1500",
+        "precio": "1700"
     }
 ]
