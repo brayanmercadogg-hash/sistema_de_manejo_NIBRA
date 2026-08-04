@@ -4,11 +4,5 @@
         "nombre": "Skala Hombre",
         "costo": "20000",
         "precio": "40000"
-    },
-    {
-        "id": 2,
-        "nombre": "Skala Maracuyá",
-        "costo": "20000",
-        "precio": "40000"
     }
 ]
