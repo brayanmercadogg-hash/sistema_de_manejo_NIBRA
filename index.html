@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Productos - Autónomo</title>
+    <title>Gestor Cloud - GitHub</title>
     <style>
         body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        
-        /* Interfaz Gráfica (Izquierda) */
         #gui { flex: 1; padding: 20px; background: #f8f9fa; display: flex; flex-direction: column; overflow-y: auto; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h2 { margin-top: 0; color: #333; }
@@ -20,7 +18,6 @@
         table { width: 100%; border-collapse: collapse; }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
         
-        /* Terminal (Derecha) */
         #terminal-container { flex: 1; background: #121212; color: #00ff00; font-family: 'Consolas', monospace; padding: 20px; display: flex; flex-direction: column; }
         #consola { flex-grow: 1; overflow-y: auto; white-space: pre-wrap; margin-bottom: 10px; }
         .linea-input { display: flex; }
@@ -30,19 +27,28 @@
 </head>
 <body>
 
-    <!-- MODO GRÁFICO -->
     <div id="gui">
+        <div class="card">
+            <h2>Configuración de GitHub</h2>
+            <div class="form-group">
+                <input type="text" id="repoOwner" placeholder="Tu usuario de GitHub">
+                <input type="text" id="repoName" placeholder="Nombre del repositorio">
+                <input type="password" id="githubToken" placeholder="GitHub Personal Access Token">
+                <button onclick="guardarConfig()">Guardar Credenciales</button>
+            </div>
+        </div>
+
         <div class="card">
             <h2>Agregar Producto</h2>
             <div class="form-group">
                 <input type="text" id="guiNombre" placeholder="Nombre del producto" autocomplete="off">
                 <input type="number" id="guiPrecio" placeholder="Precio" autocomplete="off">
-                <button onclick="agregarGrafico()">Guardar</button>
+                <button onclick="agregarGrafico()">Registrar en GitHub</button>
             </div>
         </div>
 
         <div class="card">
-            <h2>Inventario</h2>
+            <h2>Inventario en la Nube</h2>
             <table>
                 <thead>
                     <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Acción</th></tr>
@@ -52,149 +58,140 @@
         </div>
     </div>
 
-    <!-- MODO TERMINAL -->
     <div id="terminal-container">
-        <div id="consola">Sistema autónomo iniciado.\nDatos persistentes activados en LocalStorage.\nEscribe 'help' para comandos o usa la interfaz gráfica.\n\n</div>
+        <div id="consola">Conectado a GitHub Pages.\nIngresa tus datos arriba para sincronizar con tu repositorio.\n\n</div>
         <div class="linea-input">
-            <span class="prompt">root@gestor:~$</span>
+            <span class="prompt">github@cloud:~$</span>
             <input type="text" id="inputComando" autocomplete="off">
         </div>
     </div>
 
     <script>
-        const inputConsola = document.getElementById('inputComando');
-        const consola = document.getElementById('consola');
+        // Cargar configuración guardada localmente en el navegador para no escribirla siempre
+        document.getElementById('repoOwner').value = localStorage.getItem('gh_owner') || '';
+        document.getElementById('repoName').value = localStorage.getItem('gh_repo') || '';
+        document.getElementById('githubToken').value = localStorage.getItem('gh_token') || '';
 
-        // --- SISTEMA DE BASE DE DATOS (LocalStorage) ---
-        function cargarDatos(clave) {
-            return JSON.parse(localStorage.getItem(clave)) || [];
+        function guardarConfig() {
+            localStorage.setItem('gh_owner', document.getElementById('repoOwner').value);
+            localStorage.setItem('gh_repo', document.getElementById('repoName').value);
+            localStorage.setItem('gh_token', document.getElementById('githubToken').value);
+            alert("Credenciales guardadas en este navegador.");
+            cargarDatosGitHub();
         }
 
-        function guardarDatos(clave, datos) {
-            localStorage.setItem(clave, JSON.stringify(datos));
-        }
+        async function obtenerArchivoGitHub() {
+            const owner = localStorage.getItem('gh_owner');
+            const repo = localStorage.getItem('gh_repo');
+            const token = localStorage.getItem('gh_token');
+            if (!owner || !repo || !token) return null;
 
-        function registrarHistorial(accion, detalle) {
-            const historial = cargarDatos('historial');
-            const fecha = new Date().toLocaleString('es-ES');
-            historial.push({ fecha, accion, detalle });
-            guardarDatos('historial', historial);
-        }
-
-        // --- LÓGICA DEL SISTEMA ---
-        function procesarComando(textoComando) {
-            const partes = textoComando.trim().split(/\s+/);
-            if (partes.length === 0 || partes[0] === "") return "";
-
-            const cmd = partes[0].toLowerCase();
-            const args = partes.slice(1);
-            let productos = cargarDatos('productos');
-            let resp = "";
-
-            if (cmd === 'help') {
-                resp = "Comandos:\n- add [nombre] [precio]\n- del [id]\n- list\n- history\n- clear (Limpia la terminal)";
-            } 
-            else if (cmd === 'clear') {
-                consola.textContent = "Consola limpia.\n\n";
-                return "";
+            const url = `https://api.github.com/repos/${owner}/${repo}/contents/productos.json`;
+            try {
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                if (!res.ok) return { productos: [], sha: null };
+                const data = await res.json();
+                const contenidoDecodificado = JSON.parse(atob(data.content));
+                return { productos: contenidoDecodificado, sha: data.sha };
+            } catch (e) {
+                return { productos: [], sha: null };
             }
-            else if (cmd === 'add') {
-                if (args.length < 2) return "Uso: add [nombre] [precio]";
-                const precio = args.pop();
-                const nombre = args.join(" ");
-                const nuevo_id = productos.length === 0 ? 1 : productos[productos.length - 1].id + 1;
-                
-                productos.push({ id: nuevo_id, nombre, precio });
-                guardarDatos('productos', productos);
-                registrarHistorial("AGREGAR", `[${nuevo_id}] ${nombre} - $${precio}`);
-                resp = `Producto ${nuevo_id} agregado.`;
-            } 
-            else if (cmd === 'del') {
-                if (args.length === 0) return "Uso: del [id]";
-                const id_borrar = parseInt(args[0]);
-                const prodIndex = productos.findIndex(p => p.id === id_borrar);
-                
-                if (prodIndex !== -1) {
-                    const prod = productos[prodIndex];
-                    productos.splice(prodIndex, 1);
-                    guardarDatos('productos', productos);
-                    registrarHistorial("ELIMINAR", `[${id_borrar}] ${prod.nombre}`);
-                    resp = `Producto ${id_borrar} eliminado.`;
-                } else {
-                    resp = "Error: ID no encontrado.";
-                }
-            } 
-            else if (cmd === 'list') {
-                if (productos.length === 0) {
-                    resp = "Sin productos.";
-                } else {
-                    resp = "ID | Nombre | Precio\n" + productos.map(p => `${p.id} | ${p.nombre} | $${p.precio}`).join("\n");
-                }
-            } 
-            else if (cmd === 'history') {
-                const hist = cargarDatos('historial');
-                if (hist.length === 0) resp = "El historial está vacío.";
-                else resp = "HISTORIAL DE AUDITORÍA:\n" + hist.map(h => `[${h.fecha}] ${h.accion}: ${h.detalle}`).join("\n");
-            } 
-            else {
-                resp = "Comando no reconocido. Escribe 'help'.";
+        }
+
+        async function guardarArchivoGitHub(nuevosProductos, mensajeCommit) {
+            const owner = localStorage.getItem('gh_owner');
+            const repo = localStorage.getItem('gh_repo');
+            const token = localStorage.getItem('gh_token');
+            if (!owner || !repo || !token) {
+                alert("Faltan configurar las credenciales de GitHub arriba.");
+                return false;
             }
 
-            return resp;
-        }
-
-        // --- CONEXIÓN DE INTERFAZ Y TERMINAL ---
-        function enviarComando(comando, mostrarEnConsola = true) {
-            if (!comando.trim()) return;
-            if (mostrarEnConsola) consola.textContent += `root@gestor:~$ ${comando}\n`;
+            // Obtener el SHA actual del archivo (necesario para actualizarlo en la API de GitHub)
+            const actual = await obtenerArchivoGitHub();
+            const url = `https://api.github.com/repos/${owner}/${repo}/contents/productos.json`;
             
-            const respuesta = procesarComando(comando);
-            if (respuesta) consola.textContent += `${respuesta}\n\n`;
-            
-            consola.scrollTop = consola.scrollHeight;
-            cargarTabla(); // Actualizar GUI siempre que haya un comando
+            const contenidoCodificado = btoa(JSON.stringify(nuevosProductos, null, 4));
+
+            const body = {
+                message: mensajeCommit,
+                content: contenidoCodificado,
+                sha: actual.sha
+            };
+
+            const res = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
+
+            return res.ok;
         }
 
-        inputConsola.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                enviarComando(inputConsola.value);
-                inputConsola.value = '';
-            }
-        });
-
-        // --- FUNCIONES GRÁFICAS ---
-        function cargarTabla() {
-            const productos = cargarDatos('productos');
+        async function cargarDatosGitHub() {
+            const datos = await obtenerArchivoGitHub();
+            if (!datos) return;
+            const productos = datos.productos;
+            
             const tbody = document.getElementById('tablaProductos');
             tbody.innerHTML = '';
-            
             productos.forEach(p => {
                 tbody.innerHTML += `
                     <tr>
                         <td>${p.id}</td>
                         <td>${p.nombre}</td>
                         <td>$${p.precio}</td>
-                        <td><button class="btn-danger" onclick="eliminarGrafico(${p.id})">Eliminar</button></td>
+                        <td><button class="btn-danger" onclick="eliminarGitHub(${p.id})">Borrar</button></td>
                     </tr>
                 `;
             });
         }
 
-        function agregarGrafico() {
+        async function agregarGrafico() {
             const nombre = document.getElementById('guiNombre').value;
             const precio = document.getElementById('guiPrecio').value;
             if (!nombre || !precio) return;
-            enviarComando(`add ${nombre} ${precio}`);
-            document.getElementById('guiNombre').value = '';
-            document.getElementById('guiPrecio').value = '';
+
+            const datosActuales = await obtenerArchivoGitHub();
+            const productos = datosActuales ? datosActuales.productos : [];
+            const nuevo_id = productos.length === 0 ? 1 : productos[productos.length - 1].id + 1;
+
+            productos.push({ id: nuevo_id, nombre, precio });
+            
+            const exito = await guardarArchivoGitHub(productos, `Agregado producto ID ${nuevo_id}`);
+            if (exito) {
+                document.getElementById('guiNombre').value = '';
+                document.getElementById('guiPrecio').value = '';
+                cargarDatosGitHub();
+                document.getElementById('consola').textContent += `[OK] Producto ${nuevo_id} guardado en GitHub.\n`;
+            } else {
+                alert("Error al guardar en GitHub. Revisa tus credenciales.");
+            }
         }
 
-        function eliminarGrafico(id) {
-            enviarComando(`del ${id}`);
+        async function eliminarGitHub(id) {
+            const datosActuales = await obtenerArchivoGitHub();
+            if (!datosActuales) return;
+            let productos = datosActuales.productos;
+            
+            productos = productos.filter(p => p.id !== id);
+            
+            const exito = await guardarArchivoGitHub(productos, `Eliminado producto ID ${id}`);
+            if (exito) {
+                cargarDatosGitHub();
+                document.getElementById('consola').textContent += `[OK] Producto ${id} eliminado de GitHub.\n`;
+            } else {
+                alert("Error al eliminar en GitHub.");
+            }
         }
 
-        // Cargar la tabla al abrir la página
-        cargarTabla();
+        // Cargar al iniciar si ya hay credenciales
+        cargarDatosGitHub();
     </script>
 </body>
 </html>
