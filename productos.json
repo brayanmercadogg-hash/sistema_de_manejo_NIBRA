@@ -22,5 +22,11 @@
         "nombre": "Colageno 2",
         "costo": "800",
         "precio": "1600"
+    },
+    {
+        "id": 5,
+        "nombre": "Rimel",
+        "costo": "4800",
+        "precio": "10000"
     }
 ]
