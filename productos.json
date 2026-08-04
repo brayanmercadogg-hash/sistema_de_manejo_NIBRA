@@ -40,5 +40,11 @@
         "nombre": "Gancho flor",
         "costo": "2800",
         "precio": "6100"
+    },
+    {
+        "id": 8,
+        "nombre": "Fresa",
+        "costo": "2000",
+        "precio": "4000"
     }
 ]
