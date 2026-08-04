@@ -34,5 +34,11 @@
         "nombre": "Ganchos conchas",
         "costo": "1500",
         "precio": "1700"
+    },
+    {
+        "id": 7,
+        "nombre": "Gancho flor",
+        "costo": "2800",
+        "precio": "6100"
     }
 ]
