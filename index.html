@@ -3,10 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor Cloud - GitHub</title>
+    <title>Gestor con Roles - GitHub</title>
     <style>
-        body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        #gui { flex: 1; padding: 20px; background: #f8f9fa; display: flex; flex-direction: column; overflow-y: auto; }
+        body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; }
+        
+        /* Pantalla de Selección de Rol */
+        #pantalla-login { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .login-box { background: white; padding: 30px; border-radius: 8px; width: 350px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .login-box h2 { margin-top: 0; color: #333; }
+        .login-box input, .login-box select { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .login-box button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+        .login-box button:hover { background: #0056b3; }
+
+        /* Contenedor Principal (Admin: Split Screen) */
+        .app-container { display: flex; width: 100%; height: 100%; }
+        #gui { flex: 1; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h2 { margin-top: 0; color: #333; }
         .form-group { display: flex; gap: 10px; margin-bottom: 10px; }
@@ -18,139 +29,273 @@
         table { width: 100%; border-collapse: collapse; }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
         
-        #terminal-container { flex: 1; background: #121212; color: #00ff00; font-family: 'Consolas', monospace; padding: 20px; display: flex; flex-direction: column; }
+        /* Terminal (Solo Admin) */
+        #terminal-container { flex: 1; background: #121212; color: #00ff00; font-family: 'Consolas', monospace; padding: 20px; display: flex; flex-direction: column; border-left: 2px solid #333; }
         #consola { flex-grow: 1; overflow-y: auto; white-space: pre-wrap; margin-bottom: 10px; }
         .linea-input { display: flex; }
         .prompt { margin-right: 10px; }
         #inputComando { background: transparent; border: none; color: #ffffff; font-family: inherit; font-size: 1rem; flex-grow: 1; outline: none; }
+        
+        .logout-btn { background: #6c757d; margin-top: 10px; }
+        .logout-btn:hover { background: #5a6268; }
     </style>
 </head>
 <body>
 
-    <div id="gui">
-        <div class="card">
-            <h2>Configuración de GitHub</h2>
-            <div class="form-group">
-                <input type="text" id="repoOwner" placeholder="Tu usuario de GitHub">
-                <input type="text" id="repoName" placeholder="Nombre del repositorio">
-                <input type="password" id="githubToken" placeholder="GitHub Personal Access Token">
-                <button onclick="guardarConfig()">Guardar Credenciales</button>
+    <!-- MODAL DE SELECCIÓN DE ROL -->
+    <div id="pantalla-login">
+        <div class="login-box">
+            <h2>Seleccionar Rol</h2>
+            <select id="selectRol" onchange="cambiarVistaRolInput()">
+                <option value="trabajador">Trabajador (Solo Vista)</option>
+                <option value="admin">Administrador (Terminal y Control)</option>
+            </select>
+            
+            <div id="camposAdmin" style="display: none;">
+                <input type="text" id="repoOwner" placeholder="Usuario de GitHub">
+                <input type="text" id="repoName" placeholder="Nombre del Repositorio">
+                <input type="password" id="githubToken" placeholder="GitHub Personal Token">
             </div>
-        </div>
 
-        <div class="card">
-            <h2>Agregar Producto</h2>
-            <div class="form-group">
-                <input type="text" id="guiNombre" placeholder="Nombre del producto" autocomplete="off">
-                <input type="number" id="guiPrecio" placeholder="Precio" autocomplete="off">
-                <button onclick="agregarGrafico()">Registrar en GitHub</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>Inventario en la Nube</h2>
-            <table>
-                <thead>
-                    <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Acción</th></tr>
-                </thead>
-                <tbody id="tablaProductos"></tbody>
-            </table>
+            <button onclick="ingresarSistema()">Entrar al Sistema</button>
         </div>
     </div>
 
-    <div id="terminal-container">
-        <div id="consola">Conectado a GitHub Pages.\nIngresa tus datos arriba para sincronizar con tu repositorio.\n\n</div>
-        <div class="linea-input">
-            <span class="prompt">github@cloud:~$</span>
-            <input type="text" id="inputComando" autocomplete="off">
+    <!-- APLICACIÓN PRINCIPAL -->
+    <div class="app-container" id="appMain" style="display: none;">
+        
+        <!-- PARTE VISUAL (Visible para ambos) -->
+        <div id="gui">
+            <div class="card" id="panelAdminControls" style="display: none;">
+                <h2>Panel de Administración</h2>
+                <div class="form-group">
+                    <input type="text" id="guiNombre" placeholder="Nombre del producto" autocomplete="off">
+                    <input type="number" id="guiPrecio" placeholder="Precio" autocomplete="off">
+                    <button onclick="agregarGrafico()">Registrar</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0;">Inventario en Tiempo Real</h2>
+                    <button class="logout-btn" onclick="cerrarSesion()">Cambiar Rol</button>
+                </div>
+                <br>
+                <table>
+                    <thead>
+                        <tr><th>ID</th><th>Nombre</th><th>Precio</th><th id="thAccion" style="display:none;">Acción</th></tr>
+                    </thead>
+                    <tbody id="tablaProductos"></tbody>
+                </table>
+            </div>
         </div>
+
+        <!-- TERMINAL (Solo Admin) -->
+        <div id="terminal-container" style="display: none;">
+            <div id="consola">Terminal de Administración activa.\nEscribe 'help' para ver los comandos disponibles.\n\n</div>
+            <div class="linea-input">
+                <span class="prompt">admin@servidor:~$</span>
+                <input type="text" id="inputComando" autocomplete="off">
+            </div>
+        </div>
+
     </div>
 
     <script>
-        // Cargar configuración guardada localmente en el navegador para no escribirla siempre
+        let rolActual = localStorage.getItem('app_rol') || '';
+
+        // Cargar credenciales guardadas si es admin
         document.getElementById('repoOwner').value = localStorage.getItem('gh_owner') || '';
         document.getElementById('repoName').value = localStorage.getItem('gh_repo') || '';
         document.getElementById('githubToken').value = localStorage.getItem('gh_token') || '';
 
-        function guardarConfig() {
-            localStorage.setItem('gh_owner', document.getElementById('repoOwner').value);
-            localStorage.setItem('gh_repo', document.getElementById('repoName').value);
-            localStorage.setItem('gh_token', document.getElementById('githubToken').value);
-            alert("Credenciales guardadas en este navegador.");
-            cargarDatosGitHub();
+        if (rolActual) {
+            document.getElementById('selectRol').value = rolActual;
+            cambiarVistaRolInput();
+            ingresarSistema(true);
         }
 
+        function cambiarVistaRolInput() {
+            const rol = document.getElementById('selectRol').value;
+            document.getElementById('camposAdmin').style.display = (rol === 'admin') ? 'block' : 'none';
+        }
+
+        function ingresarSesion(auto = false) {
+            const rol = document.getElementById('selectRol').value;
+            rolActual = rol;
+            localStorage.setItem('app_rol', rol);
+
+            if (rol === 'admin') {
+                const owner = document.getElementById('repoOwner').value;
+                const repo = document.getElementById('repoName').value;
+                const token = document.getElementById('githubToken').value;
+                if (!owner || !repo || !token) {
+                    if (!auto) alert("Por favor completa los datos de GitHub para el rol de administrador.");
+                    return;
+                }
+                localStorage.setItem('gh_owner', owner);
+                localStorage.setItem('gh_repo', repo);
+                localStorage.setItem('gh_token', token);
+            }
+
+            document.getElementById('pantalla-login').style.display = 'none';
+            document.getElementById('appMain').style.display = 'flex';
+
+            if (rol === 'admin') {
+                document.getElementById('panelAdminControls').style.display = 'block';
+                document.getElementById('terminal-container').style.display = 'flex';
+                document.getElementById('thAccion').style.display = 'table-cell';
+            } else {
+                document.getElementById('panelAdminControls').style.display = 'none';
+                document.getElementById('terminal-container').style.display = 'none';
+                document.getElementById('thAccion').style.display = 'none';
+            }
+
+            cargarTabla();
+            // Actualización automática cada 5 segundos para el trabajador
+            setInterval(cargarTabla, 5000);
+        }
+
+        function cerrarSesion() {
+            localStorage.removeItem('app_rol');
+            location.reload();
+        }
+
+        // --- MANEJO DE DATOS CON GITHUB API ---
         async function obtenerArchivoGitHub() {
             const owner = localStorage.getItem('gh_owner');
             const repo = localStorage.getItem('gh_repo');
             const token = localStorage.getItem('gh_token');
-            if (!owner || !repo || !token) return null;
+            
+            // Si es trabajador, puede leer directamente el archivo público desde GitHub Raw (sin token necesario)
+            if (rolActual === 'trabajador') {
+                const pubOwner = localStorage.getItem('gh_owner') || document.getElementById('repoOwner').value;
+                const pubRepo = localStorage.getItem('gh_repo') || document.getElementById('repoName').value;
+                if (!pubOwner || !pubRepo) return { productos: [], sha: null };
+                try {
+                    const res = await fetch(`https://raw.githubusercontent.com/${pubOwner}/${pubRepo}/main/productos.json`);
+                    if (!res.ok) return { productos: [], sha: null };
+                    const productos = await res.json();
+                    return { productos, sha: null };
+                } catch(e) { return { productos: [], sha: null }; }
+            }
 
+            if (!owner || !repo || !token) return { productos: [], sha: null };
             const url = `https://api.github.com/repos/${owner}/${repo}/contents/productos.json`;
             try {
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${token}` }
-                });
+                const res = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
                 if (!res.ok) return { productos: [], sha: null };
                 const data = await res.json();
-                const contenidoDecodificado = JSON.parse(atob(data.content));
-                return { productos: contenidoDecodificado, sha: data.sha };
-            } catch (e) {
-                return { productos: [], sha: null };
-            }
+                return { productos: JSON.parse(atob(data.content)), sha: data.sha };
+            } catch (e) { return { productos: [], sha: null }; }
         }
 
         async function guardarArchivoGitHub(nuevosProductos, mensajeCommit) {
             const owner = localStorage.getItem('gh_owner');
             const repo = localStorage.getItem('gh_repo');
             const token = localStorage.getItem('gh_token');
-            if (!owner || !repo || !token) {
-                alert("Faltan configurar las credenciales de GitHub arriba.");
-                return false;
-            }
-
-            // Obtener el SHA actual del archivo (necesario para actualizarlo en la API de GitHub)
+            
             const actual = await obtenerArchivoGitHub();
             const url = `https://api.github.com/repos/${owner}/${repo}/contents/productos.json`;
             
-            const contenidoCodificado = btoa(JSON.stringify(nuevosProductos, null, 4));
+            // Necesitamos el SHA real por API para actualizar
+            const resSha = await fetch(url, { headers: { 'Authorization': `token ${token}` } });
+            const dataSha = await resSha.json();
 
             const body = {
                 message: mensajeCommit,
-                content: contenidoCodificado,
-                sha: actual.sha
+                content: btoa(JSON.stringify(nuevosProductos, null, 4)),
+                sha: dataSha.sha
             };
 
             const res = await fetch(url, {
                 method: 'PUT',
-                headers: {
-                    'Authorization': `token ${token}`,
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
 
             return res.ok;
         }
 
-        async function cargarDatosGitHub() {
+        async function cargarTabla() {
             const datos = await obtenerArchivoGitHub();
-            if (!datos) return;
-            const productos = datos.productos;
-            
+            const productos = datos.productos || [];
             const tbody = document.getElementById('tablaProductos');
             tbody.innerHTML = '';
+            
             productos.forEach(p => {
+                let htmlAccion = rolActual === 'admin' ? `<td><button class="btn-danger" onclick="eliminarGitHub(${p.id})">Borrar</button></td>` : '';
                 tbody.innerHTML += `
                     <tr>
                         <td>${p.id}</td>
                         <td>${p.nombre}</td>
                         <td>$${p.precio}</td>
-                        <td><button class="btn-danger" onclick="eliminarGitHub(${p.id})">Borrar</button></td>
+                        ${htmlAccion}
                     </tr>
                 `;
             });
         }
+
+        // --- LÓGICA DE COMANDOS DE LA TERMINAL (ADMIN) ---
+        const inputConsola = document.getElementById('inputComando');
+        const consola = document.getElementById('consola');
+
+        inputConsola.addEventListener('keypress', async function (e) {
+            if (e.key === 'Enter') {
+                const comando = inputConsola.value.trim();
+                if (!comando) return;
+                consola.textContent += `admin@servidor:~$ ${comando}\n`;
+                inputConsola.value = '';
+
+                const partes = comando.split(/\s+/);
+                const cmd = partes[0].toLowerCase();
+                const args = partes.slice(1);
+                
+                let datosActuales = await obtenerArchivoGitHub();
+                let productos = datosActuales.productos || [];
+
+                if (cmd === 'help') {
+                    consola.textContent += "Comandos:\n- add [nombre] [precio]\n- del [id]\n- list\n- clear\n\n";
+                } else if (cmd === 'clear') {
+                    consola.textContent = "Terminal limpia.\n\n";
+                } else if (cmd === 'list') {
+                    if (productos.length === 0) consola.textContent += "Sin productos.\n\n";
+                    else consola.textContent += "ID | Nombre | Precio\n" + productos.map(p => `${p.id} | ${p.nombre} | $${p.precio}`).join("\n") + "\n\n";
+                } else if (cmd === 'add') {
+                    if (args.length < 2) {
+                        consola.textContent += "Uso: add [nombre] [precio]\n\n";
+                    } else {
+                        const precio = args.pop();
+                        const nombre = args.join(" ");
+                        const nuevo_id = productos.length === 0 ? 1 : productos[productos.length - 1].id + 1;
+                        productos.push({ id: nuevo_id, nombre, precio });
+                        
+                        const exito = await guardarArchivoGitHub(productos, `Terminal: Agregado producto ${nuevo_id}`);
+                        if (exito) consola.textContent += `[OK] Producto ${nuevo_id} registrado.\n\n`;
+                        else consola.textContent += "[ERROR] No se pudo guardar en GitHub.\n\n";
+                    }
+                } else if (cmd === 'del') {
+                    if (args.length === 0) {
+                        consola.textContent += "Uso: del [id]\n\n";
+                    } else {
+                        const idBorrar = parseInt(args[0]);
+                        const filtrados = productos.filter(p => p.id !== idBorrar);
+                        if (filtrados.length === productos.length) {
+                            consola.textContent += "Error: ID no encontrado.\n\n";
+                        } else {
+                            const exito = await guardarArchivoGitHub(filtrados, `Terminal: Eliminado producto ${idBorrar}`);
+                            if (exito) consola.textContent += `[OK] Producto ${idBorrar} eliminado.\n\n`;
+                            else consola.textContent += "[ERROR] No se pudo actualizar GitHub.\n\n";
+                        }
+                    }
+                } else {
+                    consola.textContent += "Comando no reconocido. Escribe 'help'.\n\n";
+                }
+
+                consola.scrollTop = consola.scrollHeight;
+                cargarTabla();
+            }
+        });
 
         async function agregarGrafico() {
             const nombre = document.getElementById('guiNombre').value;
@@ -158,40 +303,33 @@
             if (!nombre || !precio) return;
 
             const datosActuales = await obtenerArchivoGitHub();
-            const productos = datosActuales ? datosActuales.productos : [];
+            let productos = datosActuales.productos || [];
             const nuevo_id = productos.length === 0 ? 1 : productos[productos.length - 1].id + 1;
 
             productos.push({ id: nuevo_id, nombre, precio });
+            const exito = await guardarArchivoGitHub(productos, `GUI: Agregado producto ${nuevo_id}`);
             
-            const exito = await guardarArchivoGitHub(productos, `Agregado producto ID ${nuevo_id}`);
             if (exito) {
                 document.getElementById('guiNombre').value = '';
                 document.getElementById('guiPrecio').value = '';
-                cargarDatosGitHub();
-                document.getElementById('consola').textContent += `[OK] Producto ${nuevo_id} guardado en GitHub.\n`;
+                cargarTabla();
             } else {
-                alert("Error al guardar en GitHub. Revisa tus credenciales.");
+                alert("Error al guardar en GitHub.");
             }
         }
 
         async function eliminarGitHub(id) {
             const datosActuales = await obtenerArchivoGitHub();
-            if (!datosActuales) return;
-            let productos = datosActuales.productos;
-            
-            productos = productos.filter(p => p.id !== id);
-            
-            const exito = await guardarArchivoGitHub(productos, `Eliminado producto ID ${id}`);
+            let productos = datosActuales.productos || [];
+            const filtrados = productos.filter(p => p.id !== id);
+
+            const exito = await guardarArchivoGitHub(filtrados, `GUI: Eliminado producto ${id}`);
             if (exito) {
-                cargarDatosGitHub();
-                document.getElementById('consola').textContent += `[OK] Producto ${id} eliminado de GitHub.\n`;
+                cargarTabla();
             } else {
                 alert("Error al eliminar en GitHub.");
             }
         }
-
-        // Cargar al iniciar si ya hay credenciales
-        cargarDatosGitHub();
     </script>
 </body>
 </html>
