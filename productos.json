@@ -46,5 +46,11 @@
         "nombre": "Fresa",
         "costo": "2000",
         "precio": "4000"
+    },
+    {
+        "id": 9,
+        "nombre": "Gloss bloomshell",
+        "costo": "12000",
+        "precio": "18000"
     }
 ]
