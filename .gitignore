@@ -1,0 +1,9 @@
+# Ignorar bases de datos locales
+productos.json
+historial.json
+
+# Ignorar carpetas de entorno virtual de Python (por si acaso)
+__pycache__/
+*.pyc
+venv/
+env/
