@@ -3,77 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Productos UI</title>
+    <title>Gestor de Productos - Autónomo</title>
     <style>
-        body {
-            background-color: #121212;
-            color: #00ff00;
-            font-family: 'Consolas', 'Courier New', monospace;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            box-sizing: border-box;
-        }
-        #consola {
-            flex-grow: 1;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            margin-bottom: 10px;
-        }
-        .linea-input {
-            display: flex;
-        }
-        .prompt {
-            margin-right: 10px;
-        }
-        input {
-            background: transparent;
-            border: none;
-            color: #ffffff; /* Texto del input en blanco, como pediste */
-            font-family: inherit;
-            font-size: 1rem;
-            flex-grow: 1;
-            outline: none;
-        }
+        body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* Interfaz Gráfica (Izquierda) */
+        #gui { flex: 1; padding: 20px; background: #f8f9fa; display: flex; flex-direction: column; overflow-y: auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { margin-top: 0; color: #333; }
+        .form-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        .form-group input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; }
+        button { padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .btn-danger { background: #dc3545; padding: 4px 8px; font-size: 0.9em; }
+        .btn-danger:hover { background: #c82333; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
+        
+        /* Terminal (Derecha) */
+        #terminal-container { flex: 1; background: #121212; color: #00ff00; font-family: 'Consolas', monospace; padding: 20px; display: flex; flex-direction: column; }
+        #consola { flex-grow: 1; overflow-y: auto; white-space: pre-wrap; margin-bottom: 10px; }
+        .linea-input { display: flex; }
+        .prompt { margin-right: 10px; }
+        #inputComando { background: transparent; border: none; color: #ffffff; font-family: inherit; font-size: 1rem; flex-grow: 1; outline: none; }
     </style>
 </head>
 <body>
-    <div id="consola">Sistema iniciado.\nEscribe 'help' para ver los comandos de gestión.\n</div>
-    <div class="linea-input">
-        <span class="prompt">root@gestor:~$</span>
-        <input type="text" id="inputComando" autocomplete="off" autofocus>
+
+    <!-- MODO GRÁFICO -->
+    <div id="gui">
+        <div class="card">
+            <h2>Agregar Producto</h2>
+            <div class="form-group">
+                <input type="text" id="guiNombre" placeholder="Nombre del producto" autocomplete="off">
+                <input type="number" id="guiPrecio" placeholder="Precio" autocomplete="off">
+                <button onclick="agregarGrafico()">Guardar</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Inventario</h2>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Acción</th></tr>
+                </thead>
+                <tbody id="tablaProductos"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODO TERMINAL -->
+    <div id="terminal-container">
+        <div id="consola">Sistema autónomo iniciado.\nDatos persistentes activados en LocalStorage.\nEscribe 'help' para comandos o usa la interfaz gráfica.\n\n</div>
+        <div class="linea-input">
+            <span class="prompt">root@gestor:~$</span>
+            <input type="text" id="inputComando" autocomplete="off">
+        </div>
     </div>
 
     <script>
-        const input = document.getElementById('inputComando');
+        const inputConsola = document.getElementById('inputComando');
         const consola = document.getElementById('consola');
 
-        input.addEventListener('keypress', async function (e) {
-            if (e.key === 'Enter') {
-                const comando = input.value;
-                if (!comando.trim()) return;
+        // --- SISTEMA DE BASE DE DATOS (LocalStorage) ---
+        function cargarDatos(clave) {
+            return JSON.parse(localStorage.getItem(clave)) || [];
+        }
 
-                consola.textContent += `root@gestor:~$ ${comando}\n`;
-                input.value = '';
+        function guardarDatos(clave, datos) {
+            localStorage.setItem(clave, JSON.stringify(datos));
+        }
 
-                try {
-                    const respuesta = await fetch('/api/ejecutar', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ comando })
-                    });
-                    
-                    const datos = await respuesta.json();
-                    consola.textContent += `${datos.respuesta}\n\n`;
-                } catch (error) {
-                    consola.textContent += `Error de red.\n\n`;
-                }
+        function registrarHistorial(accion, detalle) {
+            const historial = cargarDatos('historial');
+            const fecha = new Date().toLocaleString('es-ES');
+            historial.push({ fecha, accion, detalle });
+            guardarDatos('historial', historial);
+        }
+
+        // --- LÓGICA DEL SISTEMA ---
+        function procesarComando(textoComando) {
+            const partes = textoComando.trim().split(/\s+/);
+            if (partes.length === 0 || partes[0] === "") return "";
+
+            const cmd = partes[0].toLowerCase();
+            const args = partes.slice(1);
+            let productos = cargarDatos('productos');
+            let resp = "";
+
+            if (cmd === 'help') {
+                resp = "Comandos:\n- add [nombre] [precio]\n- del [id]\n- list\n- history\n- clear (Limpia la terminal)";
+            } 
+            else if (cmd === 'clear') {
+                consola.textContent = "Consola limpia.\n\n";
+                return "";
+            }
+            else if (cmd === 'add') {
+                if (args.length < 2) return "Uso: add [nombre] [precio]";
+                const precio = args.pop();
+                const nombre = args.join(" ");
+                const nuevo_id = productos.length === 0 ? 1 : productos[productos.length - 1].id + 1;
                 
-                consola.scrollTop = consola.scrollHeight;
+                productos.push({ id: nuevo_id, nombre, precio });
+                guardarDatos('productos', productos);
+                registrarHistorial("AGREGAR", `[${nuevo_id}] ${nombre} - $${precio}`);
+                resp = `Producto ${nuevo_id} agregado.`;
+            } 
+            else if (cmd === 'del') {
+                if (args.length === 0) return "Uso: del [id]";
+                const id_borrar = parseInt(args[0]);
+                const prodIndex = productos.findIndex(p => p.id === id_borrar);
+                
+                if (prodIndex !== -1) {
+                    const prod = productos[prodIndex];
+                    productos.splice(prodIndex, 1);
+                    guardarDatos('productos', productos);
+                    registrarHistorial("ELIMINAR", `[${id_borrar}] ${prod.nombre}`);
+                    resp = `Producto ${id_borrar} eliminado.`;
+                } else {
+                    resp = "Error: ID no encontrado.";
+                }
+            } 
+            else if (cmd === 'list') {
+                if (productos.length === 0) {
+                    resp = "Sin productos.";
+                } else {
+                    resp = "ID | Nombre | Precio\n" + productos.map(p => `${p.id} | ${p.nombre} | $${p.precio}`).join("\n");
+                }
+            } 
+            else if (cmd === 'history') {
+                const hist = cargarDatos('historial');
+                if (hist.length === 0) resp = "El historial está vacío.";
+                else resp = "HISTORIAL DE AUDITORÍA:\n" + hist.map(h => `[${h.fecha}] ${h.accion}: ${h.detalle}`).join("\n");
+            } 
+            else {
+                resp = "Comando no reconocido. Escribe 'help'.";
+            }
+
+            return resp;
+        }
+
+        // --- CONEXIÓN DE INTERFAZ Y TERMINAL ---
+        function enviarComando(comando, mostrarEnConsola = true) {
+            if (!comando.trim()) return;
+            if (mostrarEnConsola) consola.textContent += `root@gestor:~$ ${comando}\n`;
+            
+            const respuesta = procesarComando(comando);
+            if (respuesta) consola.textContent += `${respuesta}\n\n`;
+            
+            consola.scrollTop = consola.scrollHeight;
+            cargarTabla(); // Actualizar GUI siempre que haya un comando
+        }
+
+        inputConsola.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                enviarComando(inputConsola.value);
+                inputConsola.value = '';
             }
         });
+
+        // --- FUNCIONES GRÁFICAS ---
+        function cargarTabla() {
+            const productos = cargarDatos('productos');
+            const tbody = document.getElementById('tablaProductos');
+            tbody.innerHTML = '';
+            
+            productos.forEach(p => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${p.id}</td>
+                        <td>${p.nombre}</td>
+                        <td>$${p.precio}</td>
+                        <td><button class="btn-danger" onclick="eliminarGrafico(${p.id})">Eliminar</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function agregarGrafico() {
+            const nombre = document.getElementById('guiNombre').value;
+            const precio = document.getElementById('guiPrecio').value;
+            if (!nombre || !precio) return;
+            enviarComando(`add ${nombre} ${precio}`);
+            document.getElementById('guiNombre').value = '';
+            document.getElementById('guiPrecio').value = '';
+        }
+
+        function eliminarGrafico(id) {
+            enviarComando(`del ${id}`);
+        }
+
+        // Cargar la tabla al abrir la página
+        cargarTabla();
     </script>
 </body>
 </html>
