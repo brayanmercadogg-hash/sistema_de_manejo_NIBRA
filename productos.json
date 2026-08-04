@@ -4,5 +4,11 @@
         "nombre": "Skala Hombre",
         "costo": "20000",
         "precio": "40000"
+    },
+    {
+        "id": 2,
+        "nombre": "Colageno 1",
+        "costo": "600",
+        "precio": "12000"
     }
 ]
