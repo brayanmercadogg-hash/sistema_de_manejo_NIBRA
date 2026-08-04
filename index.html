@@ -1,1 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Productos UI</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #00ff00;
+            font-family: 'Consolas', 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        #consola {
+            flex-grow: 1;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .linea-input {
+            display: flex;
+        }
+        .prompt {
+            margin-right: 10px;
+        }
+        input {
+            background: transparent;
+            border: none;
+            color: #ffffff; /* Texto del input en blanco, como pediste */
+            font-family: inherit;
+            font-size: 1rem;
+            flex-grow: 1;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="consola">Sistema iniciado.\nEscribe 'help' para ver los comandos de gestión.\n</div>
+    <div class="linea-input">
+        <span class="prompt">root@gestor:~$</span>
+        <input type="text" id="inputComando" autocomplete="off" autofocus>
+    </div>
 
+    <script>
+        const input = document.getElementById('inputComando');
+        const consola = document.getElementById('consola');
+
+        input.addEventListener('keypress', async function (e) {
+            if (e.key === 'Enter') {
+                const comando = input.value;
+                if (!comando.trim()) return;
+
+                consola.textContent += `root@gestor:~$ ${comando}\n`;
+                input.value = '';
+
+                try {
+                    const respuesta = await fetch('/api/ejecutar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ comando })
+                    });
+                    
+                    const datos = await respuesta.json();
+                    consola.textContent += `${datos.respuesta}\n\n`;
+                } catch (error) {
+                    consola.textContent += `Error de red.\n\n`;
+                }
+                
+                consola.scrollTop = consola.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
