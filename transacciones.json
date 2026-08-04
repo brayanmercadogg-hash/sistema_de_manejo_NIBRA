@@ -1,0 +1,10 @@
+[
+    {
+        "fecha": "22:46:46",
+        "cajero": "admin",
+        "producto": "Skala Hombre",
+        "total": 40000,
+        "efectivo": 45000,
+        "devuelta": 5000
+    }
+]
